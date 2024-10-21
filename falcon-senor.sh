@@ -21,7 +21,7 @@ systemctl status falcon-sensor
 else 
 
 cd /tmp
-wget "$URL_deb" --no-check-certificate
+wget "$URL_rpm" --no-check-certificate
 chmod 777 falcon-sensor_7.11.0-16405_amd64.deb
 dpkg -i falcon-sensor_7.11.0-16405_amd64.deb
 sudo /opt/CrowdStrike/falconctl -s --cid="$CID"
