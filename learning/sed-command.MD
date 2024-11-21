@@ -7,10 +7,10 @@ SED command in UNIX supports regular expression which allows it to perform compl
 
 
 #### string replace
- ```bash sed 's/word-infile/replacement-ofword/' input-filename 
-    - s: string
-    - word-infile: word that present in input-filename
-    - replacement-ofword: replacement of word in input-filename ``` 
+ ```bash sed 's/word-infile/replacement-ofword/' input-filename ``` 
+  - s: string
+  - word-infile: word that present in input-filename
+  - replacement-ofword: replacement of word in input-filename  
     
 Every occurrences of word-infile has changed to replacement-ofword
     
