@@ -1,0 +1,43 @@
+version: '3'
+
+networks:
+  heimdall-network:
+    driver: bridge
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /data/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    # command:
+    #   - ' -config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - '9090:9090'
+
+  blackbox:
+    image: prom/blackbox-exporter:latest
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /data/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml
+    ports:
+      - '9115:9115'
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - '9100:9100'
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=pass
+    depends_on:
+      - prometheus
+    ports:
+      - "3000:3000"
