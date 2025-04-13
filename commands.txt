@@ -1,0 +1,303 @@
+#create eks cluster
+eksctl create cluster --name demo-eks-cluster --region ap-south-1 --nodes 2 --node-type t3.medium
+
+eksctl create cluster   --name my-cluster   --version 1.29   --region ap-south-1   --nodegroup-name my-nodes   --node-type t2.medium   --nodes 2   --nodes-min 1   --nodes-max 3
+
+
+
+#udpate kubeconfig
+	
+
+aws eks update-kubeconfig --region region-code --name my-cluster
+
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+
+
+https://github.com/kubernetes-sigs/aws-load-balancer-controller/blob/main/helm/aws-load-balancer-controller/README.md
+
+kubectl patch deployment shorturl-app -p '{"spec":{"template":{"spec":{"containers":[{"name":"shorturl-app","image":"manlineroot12/golang-shorturl-app:latest"}]}}}}'
+
+
+
+
+
+
+#init kubernetes cluster
+   yum install docker* -y
+   24  sudo setenforce 0
+   25  sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+   26  cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+EOF
+
+   27  sudo yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+   
+   
+yum install git
+sed -i '/swap/d' /etc/fstab
+sudo yum install -y yum-utils
+
+sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+sudo yum install -y docker-ce docker-ce-cli containerd.io
+
+sudo systemctl enable --now docker
+yum install wget 
+wget https://go.dev/dl/go1.23.5.linux-amd64.tar.gz
+
+rm -rf /usr/local/go && tar -C /usr/local -xzf go1.23.5.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+go version
+
+
+git clone https://github.com/Mirantis/cri-dockerd.git
+cd cri-dockerd
+mkdir -p bin
+
+go build -o bin/cri-dockerd
+
+ls -l bin/
+
+sudo install -o root -g root -m 0755 bin/cri-dockerd /usr/local/bin/cri-dockerd
+
+ls -l /usr/local/bin/cri-dockerd
+
+sudo tee /etc/systemd/system/cri-docker.service <<EOF
+[Unit]
+Description=cri-dockerd daemon
+Requires=docker.service
+After=docker.service
+
+[Service]
+ExecStart=/usr/local/bin/cri-dockerd
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+
+sudo tee /etc/systemd/system/cri-docker.socket <<EOF
+[Unit]
+Description=cri-dockerd socket
+
+[Socket]
+ListenStream=/run/cri-dockerd.sock
+Service=cri-docker.service
+
+[Install]
+WantedBy=sockets.target
+EOF
+----------------
+# eks cluster creation
+eksctl create cluster \
+  --name app-mesh-demo \
+  --region us-west-2 \
+  --nodegroup-name linux-nodes \
+  --node-type t3.medium \
+  --nodes 3 \
+  --nodes-min 1 \
+  --nodes-max 4 \
+  --managed
+  
+
+# app mesh controller installation
+kubectl apply -k "github.com/aws/eks-charts/stable/appmesh-controller//crds?ref=master"
+
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+
+helm upgrade -i appmesh-controller eks/appmesh-controller \
+  --namespace appmesh-system \
+  --set region=us-west-2 \
+  --set serviceAccount.create=true \
+  --set serviceAccount.name=appmesh-controller \
+  --set tracing.enabled=true \
+  --set tracing.provider=x-ray
+  
+
+# create a service mesh 
+
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: Mesh
+metadata:
+  name: my-mesh
+spec:
+  namespaceSelector:
+    matchLabels:
+      appmesh.k8s.aws/mesh: my-mesh
+	  
+
+kubectl apply -f my-mesh.yaml
+
+
+
+# define virutual node
+
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: productpage-vn
+  namespace: default
+spec:
+  meshName: my-mesh
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: productpage.default.svc.cluster.local
+  backends:
+    - virtualService:
+        virtualServiceRef:
+          name: reviews.default.svc.cluster.local
+		  
+
+kubectl apply -f productpage-vn.yaml
+
+# Define Virtual Services
+
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: productpage.default.svc.cluster.local
+  namespace: default
+spec:
+  meshName: my-mesh
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: productpage-router
+		
+	kubectl apply -f productpage-vs.yaml	
+
+# 
+
+
+
+
+
+wget https://github.com/prometheus/blackbox_exporter/releases/download/v0.21.0/blackbox_exporter-0.21.0.linux-amd64.tar.gz
+ tar xvfz blackbox_exporter-0.21.0.linux-amd64.tar.gz
+ cd blackbox_exporter-0.21.0.linux-amd64
+ ./blackbox_exporter
+ 
+ 
+ modules:
+  http_2xx:
+    prober: http
+    timeout: 5s
+    http:
+      method: GET
+      valid_http_versions: [ "1" ]
+      valid_http_mimes: [ "application/json" ]
+      valid_http_status_codes: []  # Defaults to 2xx
+	  
+	  
+sudo apt install prometheus -y
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+crape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]  # Look for an HTTP 200 response
+    static_configs:
+      - targets:
+          - http://prometheus.io
+          - https://prometheus.io
+######blog app url link
+          - a693249c9355848ff8ca876ab87e07c3-506726108.ap-south-1.elb.amazonaws.com  #the blogging app url link to probe
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 18.175.135.0:9115  # Blackbox Exporter address
+		
+		
+		
+		
+prometheus --config.file=prometheus.yaml
+
+
+
+
+
+
+# Update package list and install necessary dependencies
+sudo apt-get update
+sudo apt-get install -y software-properties-common curl
+
+# Add Grafana GPG key
+curl https://packages.grafana.com/gpg.key | sudo apt-key add -
+
+# Add Grafana APT repository
+sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
+
+# Update package list again and install Grafana
+sudo apt-get update
+sudo apt-get install -y grafana
+
+# Start Grafana service
+sudo systemctl start grafana-server
+
+# Enable Grafana to start on boot
+sudo systemctl enable grafana-server
+
+# Print the status of Grafana service
+sudo systemctl status grafana-server
+
+
+
+#for grafana
+http://<monitoring-vm-ip>:3000
+
+#for prometheus
+http://<monitoring-vm-ip>:9090
+
+#for blackbox
+http://<monitoring-vm-ip>:9115
+
+
+
+docker run \
+  --name jenkins-docker \
+  --rm \
+  --detach \
+  --privileged \
+  --network jenkins \
+  --network-alias docker \
+  --env DOCKER_TLS_CERTDIR=/certs \
+  --volume jenkins-docker-certs:/certs/client \
+  --volume jenkins-data:/var/jenkins_home \
+  --publish 2376:2376 \
+  --publish 8080:8080 \
+  docker:dind \
+  --storage-driver overlay2
+  
+  
+  
+  
+  
+  
+### kubernetes practice commands
+To use that context, run the command: kubectl config --kubeconfig=/root/my-kube-config use-context research
+
+To know the current context, run the command: kubectl config --kubeconfig=/root/my-kube-config current-context
