@@ -1,0 +1,91 @@
+# persistent volume classes.
+
+in the older nodes we have seen how to create pv pvc's and how to use them into our pods.
+
+### static volumes
+# In this case, we have created a disk on Google Cloud Storage. 
+# The problem here is that before this PV is created, you must have created a disk on Google Cloud.
+
+apiVersion: storage.k8s.io/v1
+kind: PersistentVolume
+metadata:
+  name: pv-gce-pd
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  gcePersistentDisk:
+    pdName: my-gce-pd
+    fsType: ext4
+
+everytime when we needed pv, we need to manaully create a disk on google cloud and then 
+create a pv from it with the same name as the disk name.
+
+```bash
+gcloud compute disks create my-gce-pd --size=10GB --zone=us-central1-a
+```
+
+thats called static volume provisioning.
+
+### dynamic volume provisioning
+
+with the storage classes, we can set a provisioner that will automatically create a disk for 
+us when we create a pv claim.
+
+that called dynamic volume provisioning.
+ before that we neeed to create storage class object.
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard
+spec:
+  provisioner: kubernetes.io/gce-pd
+  parameters:
+    type: pd-standard
+    replication-type: none
+
+initalially we have pod that created with pvc, pvc is bound to pv, we now have storage classes.
+we dont need pv defination now, the pv and asssocated storage will created automatically when
+storage class is created.
+
+so the pvc to use storage class defination we specify the storage class name in the 
+pvc defination.
+
+apiVersion: storage.k8s.io/v1
+kind: PersistentVolume
+metadata:
+  name: pv-gce-pd
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+
+thats how the storage class know witch pvc to use.
+
+next time the pvc is created, the storage class associated with it uses a defined provisioner 
+to create a required size of pv, and bind it to the pvc.
+ there are other storage provisioners like aws, azure, openstack, ceph, glusterfs, etc.
+
+depending opon the provisioner the storage class will have different parameters.
+
+  for example, in the above example we have used pd-standard, we can also use pd-ssd.
+
+  apiVersion: storage.k8s.io/v1
+  kind: StorageClass
+  metadata:
+    name: standard
+  spec:
+    provisioner: kubernetes.io/gce-pd
+    parameters:
+      type: pd-ssd
+      replication-type: none
+
+that why it calls as storage class wwe can create multiple types of disk, storage classes, replication
+etc.
+
+
+

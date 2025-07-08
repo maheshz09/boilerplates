@@ -1,0 +1,72 @@
+# Cgroups in linux 
+
+	Cgrouops are mostly used to limiting the resources that are availble to a process or container, we can limit things like CPU, memory and other resources availble on the host. you can also use them to limit access to devices, when we are using containers obviously we have shared host so limiting access to the things like CPU is very important	because otherwise we risj having what's known as a noisy neighbor container and that can essentaially use all the resources on host create denal of service and  runing the running rest of the container 
+	
+will see how to do this on docker.
+
+so what we gonnna do we can start one docker container called stress, its basically a stress testing tool and we will try to use set of resources availble depending on the parameters you pass it.
+
+# docker run --name stress --cpus 0.5 raesene/stress -c 2
+	so what this program does is it uses full 2 cpus cores, also we have addded docker flag here called --cpus that limits the docker container to only use half of cpu core only. dosent matter how much cpu is available in the machine.
+
+output:
+root@local:~# docker run --name stress --cpus 0.5 raesene/stress -c 2
+Unable to find image 'raesene/stress:latest' locally
+latest: Pulling from raesene/stress
+125a6e411906: Pull complete
+1497224324c8: Pull complete
+Digest: sha256:a5c7a88c57583277210a13e5ef00b0ed86489c14c766766930800ceee30bc023
+Status: Downloaded newer image for raesene/stress:latest
+stress: info: [1] dispatching hogs: 2 cpu, 0 io, 0 vm, 0 hdd
+
+
+so once the container started it tries to use full two cpu cores, lets check on top is it acually utilizing the core's or not.
+
+output:
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+   3676 root      20   0    3704    108      0 R  25.3   0.0   0:24.53 stress
+   3675 root      20   0    3704    108      0 R  25.0   0.0   0:25.31 stress
+
+as you can see its utilizing almost 25% of cpu in other words each process is about utilizing half core of cpu.
+	this is what we told docker to do. this is how cgroups manage the resources.
+cgroups is limiting and stopping it from using all of the request that is requested. 
+
+
+-----------------------
+#  process id's manage by cgroups
+-------------------------
+
+	so another resources witch cgroups mange witch is process ids, linux has limits till how many pids it can have on given machine
+and if you exced that limit you essentaially denial of the service the host. this means you have thing called in linux fork bomb and a fork bomb is classic attack where attckers essentaially use all of the process ids in the container or a process and actually makes host essentaially crash.
+
+whats intresting to note is as its common with the cpu limitations there's no default limit on this imposed by container system. so if you want to limit the number of process ids taken we do need to specify that.
+
+in docker we can pass a parameters that we did before for the cpu limitations, and it can also restrict the number of pids it can run.
+
+# docker run -it --pids-limit 10 ubuntu:24.04 /bin/bash
+	once the container is running we can try to run a classic fork bomb.
+
+so below command try to launch as many process ids it can essentaially chuing up all the resources on the host/
+
+# :(){ :|: & };:
+
+output:
+root@local:~# docker run -it --pids-limit 10 ubuntu:24.04 /bin/bash
+Unable to find image 'ubuntu:24.04' locally
+24.04: Pulling from library/ubuntu
+2726e237d1a3: Pull complete
+Digest: sha256:1e622c5f073b4f6bfad6632f2616c7f59ef256e96fe78bf6a595d1dc4376ac02
+Status: Downloaded newer image for ubuntu:24.04
+root@c98f48b45041:/#
+root@c98f48b45041:/#  :(){ :|: & };:
+[1] 10
+root@c98f48b45041:/# bash: fork: retry: Resource temporarily unavailable
+bash: fork: retry: Resource temporarily unavailable
+bash: fork: retry: Resource temporarily unavailable
+bash: fork: retry: Resource temporarily unavailable
+bash: fork: retry: Resource temporarily unavailable
+bash: fork: retry: Resource temporarily unavailable
+
+
+we immideitly got resources anvailable, that means it hits limit of number's of pids it can take.
+

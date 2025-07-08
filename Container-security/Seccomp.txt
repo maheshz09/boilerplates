@@ -1,0 +1,76 @@
+### seccomp
+
+so this is probably last layer of isolation that docker container can get. 
+
+
+Seccomp, short for Secure Computing mode, is a Linux kernel feature that restricts the system calls a process can make. It acts as a firewall for system calls, limiting a program's access to the kernel and potentially mitigating vulnerabilities. By default, a seccomp profile might disallow calls that could be used for container escapes, such as mount or ioperm
+
+soo there is over 300 syscalls availble but can be filterd using seccomp, and notably this syscalls depends on the hardware architecture aswell
+so there is diffrent list of syscalls it depends on whether we are running arm cpu intel cpu etc
+
+
+also kubernetes using it
+https://kubernetes.io/docs/tutorials/security/seccomp/
+
+in docker...
+it uses one default seccomp profile which is applied to every container that profile was devloped by docker itself. to try and workout what  syscalls are dengrous
+& can be blocked without nessarly impacting on the operation of the vast mejority of the applications. in his experiance it worked pritty well in that goal it has blocked sevral linux CVE's but it doesnt in my experiance tent to interfear much in the operation of peoples containers which is exactly want from a security machanisum
+
+so there is one program called "unshare"
+
+#docker run -itd ubuntu:latest /bin/bash
+
+	so the unshare program creates a new linux namespace and blocked by seccomp filter as it uses the unshare syscall which is the ones which is not allowed because it can present security problem
+	
+
+root@075f8ce20c09:/# unshare
+unshare: unshare failed: Operation not permitted
+root@075f8ce20c09:/#
+
+
+thats syscall is blocked by the seccomp, thats doing its job
+
+----
+
+lets see what happens if we dont having that, so lets what output we get now without any isolation filter
+# docker run -itd --security-opt seccomp=unconfined ubuntu:latest /bin/bash
+
+so we are passing securtity opt feature and saying it set comp unconfined this removes the set comp filter from the running container
+	so now if we run unshare command now to create namepspace
+	
+kiosk@local:~$ docker run -it --security-opt seccomp=unconfined ubuntu:latest /bin/bash
+root@d3f552a19440:/# unshare
+#
+
+
+so it worked so essentaily secomp work, secom profile doing there job and we have now removed it 
+
+NOTE: point to note in container security prospective...
+	so if we are using kubernetes the seccomp fileter is disabled by default this is something the kubernetes project does it removes the seccomp filter for compartiblity perposes 
+	
+so if we are looking for to improve security of kubernetes cluster, the recomendation that i always give is that you reenable the seccomp filter. so we can also test it out to look it not going to interfare  with your specific containers
+
+you do not essentaily at the workload level and there actually a feature in kubernetes in devlopment in kubernetes that will allow you to do that by default on a post basis as aswell 
+
+right now you need to enabled for each workload that you create, so it is definately something which i will look at
+
+
+
+----
+
+little bit more about seccom filter, by creating custom seccom fileter so block specific syscalls that we dont neeed or parhaps we have a workload that needs specific syscalls at that case you can have custom profile and then apply to conatainer
+
+ we can specify that as a parameter
+ 
+# docker run --rm -it --security-opt seccomp=~/seccomp/default_no_chmod.json ubuntu:latest /bin/bash
+
+	so essentaily we got the docker default filter and we have removed one syscall from it so docker default filter, essentaily is long allow list of all diffrent syscalls are allowed so if we remove one from it essentaily becomes disallow
+	
+thats going to deny if i am root user dosent matter
+the syscall is blocked
+
+lets some of seccomp filters in docker and how they work and in there default configuration aswell 
+
+
+overview:
+seccomp --> apparmor/selinux --> Cgroups --> capabilities --> namepspace --> process

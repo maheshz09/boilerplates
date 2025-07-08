@@ -1,0 +1,50 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-storage
+provisioner: kubernetes.io/no-provisioner # indicates that this StorageClass does not support automatic provisioning
+volumeBindingMode: Immediate
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fast-pv-cka
+spec:
+  capacity:
+    storage: 50Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /tmp/fast-data
+  storageClassName: fast-storage
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fast-pvc-cka
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 30Mi
+  storageClassName: fast-storage
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fast-pod-cka
+spec:
+  volumes:
+    - name: task-pv-storage
+      persistentVolumeClaim:
+        claimName: fast-pvc-cka
+  containers:
+    - name: fast-pod-cka
+      image: nginx:latest
+      volumeMounts:
+        - mountPath: "/app/data"
+          name: task-pv-storage

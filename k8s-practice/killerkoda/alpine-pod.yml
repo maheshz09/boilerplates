@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    app: alpine-pod-pod
+  name: alpine-pod-pod
+spec: 
+  restartPolicy: Never
+  containers:
+  - image: alpine:latest
+    name: alpine-container
+    command: ["/bin/sh"]
+    args: ["c","tail -f /config/log.txt"]
+    volumeMounts:
+      - name: config-volume
+        mountPath: /config
+   volumes:
+     - name: config-volume
+       configMap:
+         name: log-configmap
+---
+# gpt version: 
+apiVersion: v1
+kind: Pod
+metadata:
+  name: alpine-pod-pod
+spec:
+  restartPolicy: Never
+  containers:
+    - name: alpine-container
+      image: alpine:latest
+      command: ["/bin/sh"]
+      args: ["-c", "tail -f /config/log.txt"]
+      volumeMounts:
+        - name: config-volume
+          mountPath: /config
+  volumes:
+    - name: config-volume
+      configMap:
+        name: log-configmap
+---
+# chat v2
+apiVersion: v1
+kind: Pod
+metadata:
+  name: alpine-pod-pod
+spec:
+  restartPolicy: Never
+  containers:
+    - name: alpine-container
+      image: alpine:latest
+      command: ["/bin/sh"]
+      args: ["-c", "cat /config/log.txt && sleep 3600"]
+      volumeMounts:
+        - name: config-volume
+          mountPath: /config
+  volumes:
+    - name: config-volume
+      configMap:
+        name: log-configmap
+
