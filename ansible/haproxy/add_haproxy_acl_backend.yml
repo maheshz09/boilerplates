@@ -1,0 +1,40 @@
+- name: Add a single ACL and backend to HAProxy
+  hosts: haproxy_servers
+  become: true
+  vars:
+    haproxy_frontends:
+      - http_front
+    acl_name: is_dashboard
+    acl_condition: "hdr(host) -i dashboard.example.com"
+    backend_name: dashboard_backend
+    backend_servers:
+      - { name: dash1, ip: 10.0.0.131, port: 8080 }
+      - { name: dash2, ip: 10.0.0.132, port: 8080 }
+
+  tasks:
+
+    - name: Add ACL block into frontend(s)
+      blockinfile:
+        path: /etc/haproxy/haproxy.cfg
+        insertafter: "^frontend {{ item }}"
+        marker: "# {mark} ANSIBLE_ACL_{{ acl_name }}_IN_{{ item }}"
+        block: |
+          acl {{ acl_name }} {{ acl_condition }}
+          use_backend {{ backend_name }} if {{ acl_name }}
+      loop: "{{ haproxy_frontends }}"
+
+    - name: Add backend definition
+      blockinfile:
+        path: /etc/haproxy/haproxy.cfg
+        marker: "# {mark} ANSIBLE_BACKEND_{{ backend_name }}"
+        block: |
+          backend {{ backend_name }}
+          {% for server in backend_servers %}
+              server {{ server.name }} {{ server.ip }}:{{ server.port }} check
+          {% endfor %}
+
+    - name: Restart HAProxy
+      service:
+        name: haproxy
+        state: restarted
+
