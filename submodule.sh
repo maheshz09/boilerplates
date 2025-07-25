@@ -1,31 +1,38 @@
 #!/bin/bash
 
-# Make sure you're in the root of your git repo
-echo "Cleaning all submodules..."
+echo "🔍 Scanning for submodules..."
 
-# Step 1: Loop through submodules listed in .gitmodules
-git config -f .gitmodules --get-regexp path | while read key path; do
-  echo "Processing $path ..."
+# Step 1: Check if .gitmodules exists
+if [ ! -f .gitmodules ]; then
+    echo "✅ No submodules found (.gitmodules missing)"
+    exit 0
+fi
 
-  # Remove the submodule from Git index
-  git rm --cached "$path"
+# Step 2: Extract submodule paths
+submodules=$(git config -f .gitmodules --get-regexp path | awk '{ print $2 }')
 
-  # Clone the actual repo into the folder
-  repo_url=$(git config -f .gitmodules --get submodule."$path".url)
-  rm -rf "$path"
-  git clone "$repo_url" "$path"
+# Step 3: Loop through each submodule and remove it
+for path in $submodules; do
+    echo "🔥 Removing submodule: $path"
 
-  # Remove the .git folder from the sub-cloned repo
-  rm -rf "$path/.git"
+    # Remove from Git index
+    git rm --cached "$path"
+
+    # Remove the actual folder
+    rm -rf "$path"
+
+    # Remove any lingering submodule config
+    git config -f .git/config --remove-section submodule."$path" 2>/dev/null
 done
 
-# Step 2: Clean up .gitmodules
+# Step 4: Delete .gitmodules
 rm -f .gitmodules
 
-# Step 3: Add everything back and commit
+# Step 5: Final commit and push
+echo "📦 Committing changes..."
 git add .
-git commit -m "Converted all submodules to regular folders"
+git commit -m "🔥 Removed all submodules completely"
 git push
 
-echo "✅ All submodules converted to regular folders."
+echo "✅ All submodules removed and repo cleaned successfully!"
 
