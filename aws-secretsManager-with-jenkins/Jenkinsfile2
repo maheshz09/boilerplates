@@ -1,0 +1,18 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Use AWS Secret') {
+            steps {
+                // Use the AWS Secrets Manager credential in Jenkins
+                withCredentials([string(credentialsId: 'newrelic-api-key', variable: 'NEWRELIC_KEY')]) {
+                    sh """
+                        echo "Using NewRelic API Key safely"
+                        # Example call using the secret
+                        curl -H "Api-Key: $NEWRELIC_KEY" https://httpbin.org/get
+                    """
+                }
+            }
+        }
+    }
+}

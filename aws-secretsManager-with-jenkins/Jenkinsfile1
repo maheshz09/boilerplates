@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+
+    environment {
+        // This will create:
+        // dbcreds       = "username:password"
+        // dbcreds_USR   = "username"
+        // dbcreds_PSW   = "password"
+        dbcreds = credentials('db-login-user')
+    }
+
+    stages {
+        stage('Print Safe Info') {
+            steps {
+                echo "Credential ID in Jenkins: db-login-user"
+                echo "Username: ${env.dbcreds_USR}"
+                echo "Password is securely hidden (not printed)"
+            }
+        }
+
+        stage('Use in Script') {
+            steps {
+                sh """
+                    echo "Pretending to connect to some service with creds..."
+                    echo "Connecting as user: ${env.dbcreds_USR}"
+                    # Use the password without exposing it
+                    echo "Using password safely inside script (not printed)"
+                    # Example: curl with basic auth
+                    curl -u ${env.dbcreds_USR}:${env.dbcreds_PSW} https://httpbin.org/basic-auth/${env.dbcreds_USR}/${env.dbcreds_PSW}
+                """
+            }
+        }
+    }
+}
