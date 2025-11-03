@@ -1,0 +1,7 @@
+apiVersion: 
+metadata:
+  name: tst
+  namespace: default
+spec:
+  ingressClass: nginx
+  

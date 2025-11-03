@@ -1,0 +1,9 @@
+pipeline{
+    
+    stages{
+
+        with_credential('namespace','kubeconfig', 'endpoint','svc'){
+            sh 'k get pods'
+        }
+    }
+}
