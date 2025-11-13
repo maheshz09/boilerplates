@@ -92,6 +92,7 @@ func createOneCourse(w http.ResponseWriter, r *http.Request) {
 	// what if: body is empty
 	if r.Body == nil {
 		json.NewEncoder(w).Encode("Please send some data")
+		return
 	}
 
 	// what about - {} - if data being sent up like this
@@ -101,7 +102,8 @@ func createOneCourse(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode("No data inside JSON")
 		return
 	}
-
+	// closing body to free up the resources
+	r.Body.Close()
 	//TODO: check only if title is duplicate
 	// loop, title matches with course.coursename, JSON
 
