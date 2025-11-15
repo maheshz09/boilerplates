@@ -1,0 +1,17 @@
+# Terraform crap
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+*.log
+
+# Kubernetes junk
+kubeconfig
+.kube/
+
+# Docker crap
+*.pid
+
+# OS junk
+.DS_Store
+

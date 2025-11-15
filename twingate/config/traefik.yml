@@ -1,0 +1,28 @@
+global:
+  checkNewVersion: True
+  sendAnonymousUsage: false
+log:
+  level: DEBUG
+
+accessLog: {}
+
+api:
+  dashboard: true
+  debug: true
+  insecure: true
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+  
+  kubernetesIngress:
+    endpoint: "https://192.168.188.100:6443root@master"
+    namespaces:
+      - default
+      - kube-system
+      - monitoring

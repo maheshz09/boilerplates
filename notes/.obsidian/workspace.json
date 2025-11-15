@@ -1,0 +1,215 @@
+{
+  "main": {
+    "id": "50f4ea77e19082b2",
+    "type": "split",
+    "children": [
+      {
+        "id": "9f1630a4e426916f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1b1b348580a01a74",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "aws/AWS API Gateway.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "AWS API Gateway"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "cc1eb855ade9f10b",
+    "type": "split",
+    "children": [
+      {
+        "id": "9f1e078608742045",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8b68821850c95838",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "2a8461f162c93352",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "aws",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "c873810df24c6857",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "aa3893fef7304b51",
+    "type": "split",
+    "children": [
+      {
+        "id": "f38901250ea09cf6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4ee4f64d59cc19f1",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "api-gateway-aws.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for api-gateway-aws"
+            }
+          },
+          {
+            "id": "2f3040b10290394d",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "api-gateway-aws.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from api-gateway-aws"
+            }
+          },
+          {
+            "id": "a64bcd65beae5e69",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "27bb57b0995d7f2e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "api-gateway-aws.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of api-gateway-aws"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "1b1b348580a01a74",
+  "lastOpenFiles": [
+    "Pasted image 20250920153153.png",
+    "Pasted image 20250920152348.png",
+    "aws/images/Pasted image 20250920151939.png",
+    "aws/AWS API Gateway.md",
+    "aws/images/Pasted image 20250918113241.png",
+    "aws/images/Pasted image 20250918112539.png",
+    "aws/images/Pasted image 20250914115617.png",
+    "aws/images/Pasted image 20250914115644.png",
+    "aws/images/Pasted image 20250918112518.png",
+    "aws/images/Pasted image 20250918112402.png",
+    "aws/images/Pasted image 20250918112332.png",
+    "aws/images/Pasted image 20250918111938.png",
+    "aws/images",
+    "Untitled.md",
+    "desktop.ini",
+    "aws",
+    "csr-admin-user.md",
+    "Untitled.base",
+    "k8s_user_creation.md",
+    "Pasted image 20250914114939.img.md",
+    "Pasted image 20250914115040.md",
+    "network-namespaces.md",
+    "vault-create.md",
+    "user-create-k8s.md",
+    "temp.md",
+    "test2.md",
+    "Site-to-site-vpn.md",
+    "product-registration.md",
+    "network-policy.md",
+    "imp2.md",
+    "commands.md",
+    "csr.md",
+    "exp.md",
+    "imp.md",
+    "helm.md",
+    "daemonset.md",
+    "tmux.md",
+    "k8s-issues.md",
+    "te.md",
+    "role.md"
+  ]
+}

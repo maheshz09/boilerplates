@@ -1,0 +1,371 @@
+# ArgoCD + Argo Rollouts SRE/DevOps Guide
+
+This is a comprehensive guide on using ArgoCD and Argo Rollouts for GitOps, progressive delivery, rollout control, and monitoring in Kubernetes.
+
+---
+
+## 1. Git as Single Source of Truth
+
+* ArgoCD follows **GitOps**.
+* Git repository contains the **desired state** (Kubernetes manifests, Helm charts, Kustomize overlays, etc.).
+* ArgoCD continuously compares **Git** vs **live cluster state**.
+* Out-of-sync → manual or auto-sync to cluster.
+
+### Installation & Setup
+
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+```
+
+Port-forward to access UI:
+
+```bash
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+```
+
+Login:
+
+```bash
+argocd admin initial-password -n argocd
+argocd login localhost:8080
+```
+
+### Create ArgoCD Application
+
+```bash
+argocd app create myapp \
+  --repo https://github.com/mahesh/my-k8s-manifests.git \
+  --path k8s/overlays/prod \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace prod
+```
+
+### Git Change Detection
+
+* **Polling:** default, checks every 3 min.
+* **Webhook:** GitHub/GitLab pushes notify ArgoCD immediately.
+
+### Sync & Auto-Sync
+
+```bash
+argocd app set myapp --sync-policy automated
+```
+
+---
+
+## 2. Rollout History in Kubernetes
+
+### View History
+
+```bash
+kubectl rollout history deployment <deployment-name> -n <namespace>
+```
+
+### View Specific Revision
+
+```bash
+kubectl rollout history deployment <deployment-name> --revision=2
+```
+
+### Rollback
+
+```bash
+kubectl rollout undo deployment <deployment-name>
+kubectl rollout undo deployment <deployment-name> --to-revision=2
+```
+
+### Pause & Resume
+
+```bash
+kubectl rollout pause deployment <deployment-name>
+kubectl rollout resume deployment <deployment-name>
+```
+
+### ReplicaSets
+
+```bash
+kubectl get rs -n <namespace>
+```
+
+### Cleanup Old Revisions
+
+```bash
+kubectl patch deployment <deployment-name> -p '{"spec":{"revisionHistoryLimit":3}}'
+```
+
+---
+
+## 3. Rollouts in ArgoCD
+
+### View History
+
+```bash
+argocd app history <app-name>
+```
+
+### Rollback
+
+```bash
+argocd app rollback <app-name> <revision-id>
+```
+
+### What ArgoCD Reads from Git
+
+* Standard K8s manifests, Helm charts, Kustomize overlays.
+
+---
+
+## 4. Rollout Control in Kubernetes
+
+### RollingUpdate Example
+
+```yaml
+strategy:
+  type: RollingUpdate
+  rollingUpdate:
+    maxUnavailable: 1
+    maxSurge: 2
+```
+
+### Commands
+
+| Action        | Command                                                 |
+| ------------- | ------------------------------------------------------- |
+| Status        | `kubectl rollout status deployment myapp`               |
+| Pause         | `kubectl rollout pause deployment myapp`                |
+| Resume        | `kubectl rollout resume deployment myapp`               |
+| Undo          | `kubectl rollout undo deployment myapp`                 |
+| Undo specific | `kubectl rollout undo deployment myapp --to-revision=3` |
+
+---
+
+## 5. Argo Rollouts (Advanced Deployment Control)
+
+### Install
+
+```bash
+kubectl create namespace argo-rollouts
+kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+```
+
+### Canary Rollout Example
+
+```yaml
+strategy:
+  canary:
+    steps:
+    - setWeight: 20
+    - pause: {duration: 2m}
+    - setWeight: 50
+    - pause: {duration: 5m}
+    - setWeight: 100
+```
+
+### Blue-Green Example
+
+```yaml
+strategy:
+  blueGreen:
+    activeService: myapp-active
+    previewService: myapp-preview
+    autoPromotionEnabled: false
+```
+
+### CLI Dashboard
+
+```bash
+kubectl argo rollouts dashboard
+kubectl argo rollouts get rollout myapp -n demo --watch
+kubectl argo rollouts promote myapp -n demo
+kubectl argo rollouts abort myapp -n demo
+```
+
+---
+
+## 6. Full Example: Canary with Prometheus & Slack
+
+### Git Repo Structure
+
+```
+git-repo/
+ ├── rollout.yaml
+ ├── services.yaml
+ ├── analysis-template.yaml
+ ├── notifications-cm.yaml
+ └── argocd-app.yaml
+```
+
+### rollout.yaml
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: myapp
+  namespace: demo
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: myapp
+  strategy:
+    canary:
+      canaryService: myapp-canary
+      stableService: myapp-stable
+      steps:
+      - setWeight: 25
+      - pause: {duration: 2m}
+      - analysis:
+          templates:
+          - templateName: success-rate
+      - setWeight: 50
+      - pause: {duration: 5m}
+      - analysis:
+          templates:
+          - templateName: success-rate
+      - setWeight: 100
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: nginx:1.27
+        ports:
+        - containerPort: 80
+```
+
+### services.yaml
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-stable
+  namespace: demo
+spec:
+  selector:
+    app: myapp
+  ports:
+  - port: 80
+    targetPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp-canary
+  namespace: demo
+spec:
+  selector:
+    app: myapp
+  ports:
+  - port: 80
+    targetPort: 80
+```
+
+### analysis-template.yaml (Prometheus)
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: demo
+spec:
+  metrics:
+  - name: request-success-rate
+    interval: 30s
+    count: 3
+    successCondition: result[0] >= 0.95
+    failureCondition: result[0] < 0.95
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          sum(rate(http_requests_total{app="myapp",status!~"5.."}[1m]))
+          /
+          sum(rate(http_requests_total{app="myapp"}[1m]))
+```
+
+### notifications-cm.yaml (Slack)
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argo-rollouts-notifications-cm
+  namespace: argo-rollouts
+data:
+  service.slack: |
+    token: <YOUR_SLACK_WEBHOOK_URL>
+  trigger.on-rollout-updated: |
+    - when: "rollout.updated"
+      send: [slack]
+  template.slack: |
+    message: |
+      🎯 Rollout {{rollout.metadata.name}} updated:
+      Status: {{rollout.status.phase}}
+      Step: {{rollout.status.currentStepIndex}}
+      Canary Weight: {{rollout.status.currentPodHash}}
+```
+
+### argocd-app.yaml
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: myapp-rollout
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/mahesh/oncloudev-rollouts.git'
+    targetRevision: main
+    path: .
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: demo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+```
+
+### Apply & Observe
+
+```bash
+kubectl create ns demo
+kubectl apply -f services.yaml
+kubectl apply -f analysis-template.yaml
+kubectl apply -f rollout.yaml
+kubectl argo rollouts get rollout myapp -n demo --watch
+kubectl argo rollouts dashboard
+```
+
+### Workflow Summary
+
+```
+Git Commit (image update) → ArgoCD detects → Rollout starts → Canary traffic → Prometheus metric check → Promote/Rollback → Slack notification
+```
+
+---
+
+## 7. Key Interview / SRE Topics
+
+* Traffic Strategy: pod-level vs request-level
+* Observability: Prometheus metrics in AnalysisTemplate
+* GitOps: Git = source of truth
+* Automation: Slack, Jira alerts
+* Security: Image signature verification
+* HA: Multi-cluster ArgoCD with ApplicationSets
+* Promotion Policies: Manual vs auto
+* Rollback Logic: Git commit vs metric failure
+
+---
+
+**End of Guide**
