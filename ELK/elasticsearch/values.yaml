@@ -21,6 +21,7 @@ roles:
   - remote_cluster_client
   - transform
 
+# For production - adjust replicas and resources as needed
 replicas: 3
 minimumMasterNodes: 2
 
@@ -109,7 +110,7 @@ volumeClaimTemplate:
       storage: 30Gi
 
 rbac:
-  create: false
+  create: true
   serviceAccountAnnotations: {}
   serviceAccountName: ""
   automountToken: true
@@ -169,7 +170,7 @@ antiAffinityTopologyKey: "kubernetes.io/hostname"
 
 # Hard means that by default pods will only be scheduled if there are enough nodes for them
 # and that they will never end up on the same node. Setting this to soft will do this "best effort"
-antiAffinity: "hard"
+antiAffinity: "soft"
 
 # This is the node affinity settings as defined in
 # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#node-affinity-beta-feature

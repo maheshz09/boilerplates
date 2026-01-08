@@ -47,7 +47,7 @@ daemonset:
                 logs_path: "/var/log/containers/"
 
       output.logstash:
-        hosts: ["logstash:5044"]
+        hosts: ["logstash-logstash:5044"]
   # Only used when updateStrategy is set to "RollingUpdate"
   maxUnavailable: 1
   nodeSelector: {}
@@ -115,13 +115,8 @@ deployment:
           paths:
             - /usr/share/filebeat/logs/filebeat
 
-      output.elasticsearch:
-        host: "${NODE_NAME}"
-        hosts: '["https://${ELASTICSEARCH_HOSTS:elasticsearch-master:9200}"]'
-        username: "${ELASTICSEARCH_USERNAME}"
-        password: "${ELASTICSEARCH_PASSWORD}"
-        protocol: https
-        ssl.certificate_authorities: ["/usr/share/filebeat/certs/ca.crt"]
+      output.logstash:
+        hosts: ["logstash-logstash:5044"]
   nodeSelector: {}
   # A list of secrets and their paths to mount inside the pod
   # This is useful for mounting certificates for security other sensitive values

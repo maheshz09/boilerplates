@@ -22,7 +22,15 @@ logstashPipeline:
         port => 5044
       }
     }
-    output { elasticsearch { hosts => "http://elasticsearch:9200" } }
+    output { 
+      elasticsearch { 
+        hosts => ["https://elasticsearch-master:9200"]
+        user => "${ELASTICSEARCH_USERNAME}"
+        password => "${ELASTICSEARCH_PASSWORD}"
+        ssl => true
+        ssl_certificate_verification => false
+      } 
+    }
 
 # Allows you to add any pattern files in your custom pattern dir
 logstashPatternDir: "/usr/share/logstash/patterns/"
@@ -33,7 +41,17 @@ logstashPattern: {}
 # Extra environment variables to append to this nodeGroup
 # This will be appended to the current 'env:' key. You can use any of the kubernetes env
 # syntax here
-extraEnvs: []
+extraEnvs:
+  - name: "ELASTICSEARCH_USERNAME"
+    valueFrom:
+      secretKeyRef:
+        name: elasticsearch-master-credentials
+        key: username
+  - name: "ELASTICSEARCH_PASSWORD"
+    valueFrom:
+      secretKeyRef:
+        name: elasticsearch-master-credentials
+        key: password
 #  - name: MY_ENVIRONMENT_VAR
 #    value: the_value_goes_here
 
@@ -61,7 +79,10 @@ secrets: []
 #      cert.key.filepath: "secrets.crt" # The path to file should be relative to the `values.yaml` file.
 
 # A list of secrets and their paths to mount inside the pod
-secretMounts: []
+secretMounts:
+  - name: elasticsearch-master-certs
+    secretName: elasticsearch-master-certs
+    path: /etc/logstash/certs/
 
 hostAliases: []
 #- ip: "127.0.0.1"
@@ -93,14 +114,7 @@ volumeClaimTemplate:
       storage: 1Gi
 
 rbac:
-  create: false
-  serviceAccountAnnotations: {}
-  serviceAccountName: ""
-  annotations:
-    {}
-    #annotation1: "value1"
-    #annotation2: "value2"
-    #annotation3: "value3"
+  create: true
 
 podSecurityPolicy:
   create: false
@@ -271,14 +285,14 @@ service:
       targetPort: 8080
 
 ingress:
-  enabled: false
+  enabled: true
   annotations:
-    {}
+    kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   className: "nginx"
   pathtype: ImplementationSpecific
   hosts:
-    - host: logstash-example.local
+    - host: localhost
       paths:
         - path: /beats
           servicePort: 5044
@@ -286,5 +300,6 @@ ingress:
           servicePort: 8080
   tls: []
   #  - secretName: logstash-example-tls
-  #    hosts:
+  #    hosts:Name: logstash-example-tls
+  #      - logstash-example.local
   #      - logstash-example.local

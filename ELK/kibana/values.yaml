@@ -1,10 +1,10 @@
 ---
-elasticsearchHosts: "https://elasticsearch:9200"
+elasticsearchHosts: "https://elasticsearch-master:9200"
 elasticsearchCertificateSecret: elasticsearch-master-certs
 elasticsearchCertificateAuthoritiesFile: ca.crt
 elasticsearchCredentialSecret: elasticsearch-master-credentials
 
-replicas: 1
+replicas: 2
 
 # Extra environment variables to append to this nodeGroup
 # This will be appended to the current 'env:' key. You can use any of the kubernetes env
@@ -54,7 +54,7 @@ resources:
     cpu: "1000m"
     memory: "2Gi"
 
-protocol: http
+protocol: https
 
 serverHost: "0.0.0.0"
 
@@ -142,10 +142,10 @@ ingress:
     - host: kibana-example.local
       paths:
         - path: /
-  #tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  tls: []
+  #   - secretName: kibana-tls
+  #     hosts:
+  #       - kibana.example.com
 
 readinessProbe:
   failureThreshold: 3
